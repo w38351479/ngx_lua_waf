@@ -11,14 +11,15 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 1、针对疑似机器人访问行为，浮层滑块验证，不再是单纯返回403，加入可以选功能图片验证码  
 2、蜘蛛验证（这个还不确定）  
 5、根据连续异常响应码分布，限制IP访问（拦截黑客针对不存在的URL地址发起的大量恶意访问）  
-7、可设置对某些特定URL地址(如管理员登录后台)指定只允许某些IP访问  
 8、基于日志服务，提供全量访问日志的攻击比例分析  
+
   
-  
-## 【2020.06.X】  
+## 【2020.06.28】  
 1、添加user-agent规则。支持如wordpress/pingback等常见CC变种型攻击防护  
 2、头部字段Referer限制，防止恶意请求或防盗链  
 3、HTTP/HTTPS协议请求方法限制（限制TRACE/TRACK/OPTIONS/PUT/PATCH/DELETE/CONNECT）,不允许未知方法或空  
+4、防信息泄露：支持数据脱敏（身份证、手机号）,参考某云平台WAF的
+5、针对特殊URL进行独立限速，主要针对短信接口等非页面URL    
 **【Bug修复】**  
 1、修复User-agent为空时直接绕过UA规则检查。要求强制有UA才可以访问  
   
