@@ -11,7 +11,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 1、针对疑似机器人访问行为，浮层滑块验证，不再是单纯返回403，加入可以选功能图片验证码  
 
   
-## 【2020.06.28】  不着急，代码还没上，正最后测试阶段  
+## 【2020.07.06】 
 1、添加user-agent规则。支持如wordpress/pingback等常见CC变种型攻击防护  
 2、头部字段Referer限制，防止恶意请求或防盗链  
 3、HTTP/HTTPS协议请求方法限制（限制TRACE/TRACK/OPTIONS/PUT/PATCH/DELETE/CONNECT）,不允许未知方法或空  
@@ -151,14 +151,32 @@ openresty安装路径假设为: /usr/local/openresty
     echo /usr/local/lib  >> /etc/ld.so.conf.d/local.conf
     sudo ldconfig  
 
+2.1.2) 安装gd.so依赖
+
+    复制gd.so依赖到 /usr/local/openresty/lualib    
+    
+2.1.3) 安装lfs.so依赖
+    
+    git clone https://github.com/keplerproject/luafilesystem.git  
+    cd luafilesystem  
+    make LUA_INC='-I/usr/local/openresty/luajit/include/luajit-2.1'  
+    make install  
+    cp src/lfs.so /usr/local/openresty/lualib/  
+    
+    
 2.2）在nginx.conf的http段添加  
 
-    lua_package_path  "/usr/local/openresty/nginx/conf/waf/?.lua;;";
+    lua_package_path  "/usr/local/openresty/nginx/conf/waf/?.lua;;";  
     lua_package_cpath  "/usr/local/openresty/lualib/?.so;;";  
-    lua_shared_dict urllimit 10m;
-    lua_shared_dict iplimit 10m;
-    init_by_lua_file   /usr/local/openresty/nginx/conf/waf/init.lua;
-    access_by_lua_file /usr/local/openresty/nginx/conf/waf/waf.lua;
+    lua_shared_dict urllimit 10m;  
+    lua_shared_dict iplimit 10m;  
+    lua_shared_dict checkcode 1m;  
+    lua_shared_dict respstatus 3m;  
+    init_by_lua_file   /usr/local/openresty/nginx/conf/waf/init.lua;  
+    access_by_lua_file /usr/local/openresty/nginx/conf/waf/waf.lua;  
+    header_filter_by_lua_file /usr/local/openresty/nginx/conf/waf/response_header_waf.lua;  
+    body_filter_by_lua_file /usr/local/openresty/nginx/conf/waf/response_body_waf.lua;  
+    log_by_lua_file  /usr/local/openresty/nginx/conf/waf/log_waf.lua;  
 		
 2.3）配置config.lua里的waf规则目录
 

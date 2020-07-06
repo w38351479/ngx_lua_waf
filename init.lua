@@ -8,6 +8,7 @@ local get_headers = ngx.req.get_headers
 local optionIsOn = function (options) return options == "on" and true or false end
 logpath = logdir 
 rulepath = RulePath
+abnormal_proxy_check = optionIsOn(AbnormalProxyCheck)
 UrlDeny = optionIsOn(UrlDeny)
 PostCheck = optionIsOn(PostMatch)
 CookieCheck = optionIsOn(CookieMatch)
@@ -17,32 +18,32 @@ PathInfoFix = optionIsOn(PathInfoFix)
 attacklog = optionIsOn(attacklog)
 CCDeny = optionIsOn(CCDeny)
 Redirect = optionIsOn(Redirect)
+Referer = optionIsOn(Referer)
 CountryLimit = optionIsOn(CountryLimit)
 FileContentCheck = optionIsOn(FileContentCheck)
+config_bots_check = optionIsOn(Bots_check)
+ContinuousResponse = optionIsOn(ContinuousResponseCheck)
+SlowDos = optionIsOn(SlowDos)
 
 
 
-
---验证码
-function WafCaptcha()
-    html_file = io.open("waf_captcha/waf-captcha.html","r")
-    html_v = html_file:read("*a")
-    say_html(html_v)
-end
 
 
 --获取客户端IP，支持代理
 function getClientIp()
     local headers = ngx.req.get_headers()
     local reip = headers["X-REAL-IP"] or headers["X_FORWARDED_FOR"] or ngx.var.remote_addr
+
     if reip == nil then
         local reip = "unknown"
+        return reip
     end
     --检查返回的IP是否是多个值，如果是，只取最后一个
     if string.find(reip, ',') then
         local table_ip = split(reip,",")
         local table_len = table.getn(table_ip)
         local reip = table_ip[table_len]
+        return reip
     end
     return reip
 end
@@ -77,7 +78,7 @@ function log(data,ruletag)
 end
 
 --记录上传的文件
-function Filelog(logfilename,fn,finfo)
+function Filelog(logfilename,fn,finfo,t_rule)
     local request_method = ngx.req.get_method()
     local url = ngx.var.request_uri
     if attacklog then
@@ -88,10 +89,10 @@ function Filelog(logfilename,fn,finfo)
         local time=ngx.localtime()
         local filename = logpath..'/'..servername.."_"..ngx.today().."_"..logfilename..".log"
         if ua  then
-            local line = realIp.." ["..time.."] \""..request_method.." "..servername..url.."\" \""..fn.."\"  \""..ua.."\" \""..finfo.."\"\n"
+            local line = realIp.." ["..time.."] \""..request_method.." "..servername..url.."\" \""..fn.."\"  \""..ua.."\" \""..finfo.."\" \""..t_rule.. "\"\n"
             write(filename,line)
         else
-            local line = realIp.." ["..time.."] \""..request_method.." "..servername..url.."\" \""..fn.."\" - \""..finfo.."\"\n"
+            local line = realIp.." ["..time.."] \""..request_method.." "..servername..url.."\" \""..fn.."\" - \""..finfo.."\" \""..t_rule.. "\"\n"
             write(filename,line)
         end
     end
@@ -117,7 +118,9 @@ function read_rule(var)
     end
     t = {}
     for line in file:lines() do
-        table.insert(t,line)
+        if not match(line,'^%-%-') then
+            table.insert(t,line)
+        end
     end
     file:close()
     return(t)
@@ -130,6 +133,9 @@ whiteuarules=read_rule('white-user-agent')
 wturlrules=read_rule('whiteurl')
 postrules=read_rule('post')
 ckrules=read_rule('cookie')
+whitereferer=read_rule('WhiteReferer')
+blockreferer=read_rule('BlockReferer')
+abnormal_proxy_rules=read_rule('block_proxy')
 
 function say_html(v)
     if not v then
@@ -157,7 +163,7 @@ function whiteurl()
             for _,rule in pairs(wturlrules) do
                 if ngxmatch(ngx.var.request_uri,rule,"isjo") then
                     return true
-                 end
+                end
             end
         end
     end
@@ -165,36 +171,36 @@ function whiteurl()
 end
 
 function whitehost()
-	if WhiteHostCheck then
-	    local items = Set(hostWhiteList)
-	    for host in pairs(items) do
-	    	if ngxmatch(ngx.var.host, host, "isjo") then
-                    log("-","white host: ".. host)
-	            return true
-	    	end
-	    end
-	end
-	return false
+    if WhiteHostCheck then
+        local items = Set(hostWhiteList)
+        for host in pairs(items) do
+            if ngxmatch(ngx.var.host, host, "isjo") then
+                log("-","white host: ".. host)
+                return true
+            end
+        end
+    end
+    return false
 end
 
 function args()
     for _,rule in pairs(argsrules) do
-            if ngxmatch(unescape(ngx.var.request_uri),rule,"isjo") then
-                    log("-",rule)
-                    say_html("URL请求异常")
-                    return true
-            end
+        if ngxmatch(unescape(ngx.var.request_uri),rule,"isjo") then
+            log("-","args in attack rules: " ..rule)
+            say_html("URL参数异常")
+            return true
+        end
         local args = ngx.req.get_uri_args()
         for key, val in pairs(args) do
             if type(val)=='table' then
                  local t={}
                  for k,v in pairs(val) do
-                    if v == true then
-                        v=""
-                    end
-                    table.insert(t,v)
-                end
-                data=table.concat(t, " ")
+                     if v == true then
+                         v=""
+                     end
+                     table.insert(t,v)
+                 end
+                 data=table.concat(t, " ")
             else
                 data=val
             end
@@ -208,6 +214,8 @@ function args()
     return false
 end
 
+
+--URL合法性检查
 function url()
     if UrlDeny then
         for _,rule in pairs(urlrules) do
@@ -223,6 +231,12 @@ end
 
 function ua()
     local ua = ngx.var.http_user_agent
+    --不允许ua为空
+    if ua == nil then
+        log("-", "ua in attack rules: " .. "UA is nil, this is not a normal visit")
+        say_html("UA不正常")
+        return true
+    end
     if ua ~= nil then
         for _,rule in pairs(uarules) do
             if rule ~="" and ngxmatch(ua,rule,"isjo") then
@@ -232,7 +246,6 @@ function ua()
             end
         end
     end
-    return false
 end
 
 --body内容检查
@@ -277,7 +290,8 @@ function denycc()
         --local uri = ngx.var.uri
         --改用request_uri,并且进行base64，以防特殊符号出问题。解决使用URL传参导致触发CC异常  
         --base64url是Base64编码的一种改进形式，它用“－”和“_”替代了“＋”和“／”，编码后长度不是4的倍数时也不使用“＝”填补，可以安全地用在URL 里。
-        local uri = b64.encode_base64url(tostring(ngx.var.request_uri))
+        --local uri = b64.encode_base64url(tostring(ngx.var.request_uri))
+        local uri = b64.encode_base64url(tostring(ngx.var.uri))
         local CCcount = tonumber(string.match(urlCCrate, "(.*)/"))
         local CCseconds = tonumber(string.match(urlCCrate, "/(.*)"))
         local ipCCcount = tonumber(string.match(ipCCrate, "(.*)/"))
@@ -288,12 +302,28 @@ function denycc()
         local iplimit = ngx.shared.iplimit
         local req, _ = urllimit:get(token)
         local ipreq, _ = iplimit:get(now_ip)
+        local teshu = true
 
-        if req then -- ip访问url频次检测
-            if req > CCcount then
+        --优先处理特殊的URL频次检测
+        if req then
+            --特殊的URL频次检测
+            if SpecialURL ~= nil and table.getn(SpecialURL) ~= 0 then
+                for _,t in pairs(SpecialURL) do
+                    if uri == b64.encode_base64url(t["target_url"]) then
+                        if req > t["limit_per_min"] then
+                            log("-", "IP get url over times. ")
+                            say_html("IpURL频繁访问限制z，请稍后再试")
+                            return true
+                        else
+                            teshu = false
+                        end
+                    end
+                end
+            end
+            -- ip访问url频次检测
+            if req > CCcount and teshu then
                 log("-", "IP get url over times. ")
                 say_html("IpURL频繁访问限制，请稍后再试")
-        --        say_html(token)
                 return true
             else
                 urllimit:incr(token, 1)
@@ -314,7 +344,6 @@ function denycc()
             iplimit:set(now_ip, 1, ipCCseconds)
         end
     end
-
     return false
 end
 
@@ -322,9 +351,23 @@ end
 
 function whiteua()
     local ua = ngx.var.http_user_agent
+    local now_ip = getClientIp()
     if ua ~= nil then
         for _,rule in pairs(whiteuarules) do
             if rule ~="" and ngxmatch(ua,rule,"isjo") then
+                -- 验证蜘蛛真假；判断是否开启验证，且是否属于蜘蛛
+                if config_bots_check  then
+                    -- 验证蜘蛛真假,host 反查ip
+                    local handle = io.popen("host " ..now_ip)
+                    local result = handle:read("*all")
+                    handle:close()
+                    --检查是否包含验证域名
+                    if not ngxmatch(result,rule,"ijo") then
+                        log("-", "Suspected forged reptile: "..rule)
+                        say_html("疑似伪造爬虫，禁止访问")
+	                return true
+                    end
+                end
                 return true
             end
         end
@@ -430,11 +473,13 @@ function blockip()
                 if IpBelongToNetwork(IP2bin(cIP),IP2bin(ip_list[1]),ip_list[2]) then
                     ngx.exit(403)
                     return true
-                end 
+                end
+            else
+                return false 
             end
         end
     end
-        return false
+    return false
 end
 
 --上传文件白名单后缀检查
@@ -444,11 +489,11 @@ function fileExtCheck(ext,fn,finfo)
     if ext then
         for rule in pairs(items) do
             if string.lower(rule) == ext then 
-                Filelog('UploadFile',fn,finfo)
+                Filelog('UploadFile',fn,finfo,"Allowed file suffixes.")
                 return true
             end
         end
-        Filelog('UploadFileFailed',fn,finfo)
+        Filelog('UploadFileFailed',fn,finfo,"File suffix is not supported.")
         say_html('该类型文件不允许上传：'..ext)
     end
     return false
@@ -485,6 +530,8 @@ function whiteip()
                 if IpBelongToNetwork(IP2bin(cIP),IP2bin(ip_list[1]),ip_list[2]) then
                     return true
                 end
+            else
+                return false
             end
         end
     end
@@ -492,4 +539,110 @@ function whiteip()
 end
 
 
+--Referer限制，防止恶意请求或防盗链
+function RefererLimit()
+    local headers = ngx.req.get_headers()
+    local h_ref = headers["referer"]
+    if h_ref then
+        --Referer白名单
+        for _,wrrule in pairs(whitereferer) do
+            if ngxmatch(h_ref,wrrule,"ijo") then
+                return false
+            end
+        end
+        --Referer黑名单
+        for _,brrule in pairs(blockreferer) do
+            if ngxmatch(h_ref,brrule,"isjo") then
+                log("-","BlockReferer in attack rules: " .. brrule)
+                ngx.exit(403)
+                return true
+            end
+        end
+    end
+    return false
+end
 
+
+--HTTP请求方法限制
+function Block_RequestMethod()
+    local items = Set(BlockRequestMethod)
+    local re_method = ngx.req.get_method()
+    if re_method then
+        for re_me_rule in pairs(items) do
+            if ngxmatch(re_method,re_me_rule,"ijo") then
+                log("-","Request method not allowed: " .. re_me_rule)
+                say_html("非法请求方法："..re_method)
+                return true
+            end
+        end
+        return false
+    else
+        log("-","Request method not allowed: null")
+        ngx.exit(403)
+        return true
+    end
+end
+
+
+--连续异常响应码拦截
+function ContinuousAnomaliesCheck()
+    if ContinuousResponse then
+        local respstatus = ngx.shared.respstatus
+        local ContinuousResponseLimit = tonumber(ContinuousResponseLimit)
+        local now_ip = getClientIp()
+        local tmp_num = 0
+        if table.getn(respstatus:get_keys()) > 0 then
+            for k,v in pairs(respstatus:get_keys()) do
+                local IP_v = split(v,'#')
+                if IP_v[1] == now_ip then
+                    tmp_num = tmp_num + 1
+                end
+            end
+            if tmp_num >= ContinuousResponseLimit then
+
+                log("-","Continuous request exception response: "..now_ip)
+                say_html("连续响应异常状态码")
+                ngx.exit(403)
+                return true
+            end
+        end
+    end
+end
+
+
+
+
+--http慢速攻击
+function SlowDosCheck()
+    if SlowDos then
+        local now_ip = getClientIp()
+        local slowCCcount = tonumber(string.match(SlowDosCrate, "(.*)/"))
+        local respstatus = ngx.shared.respstatus
+        local req, _ = respstatus:get(now_ip)
+        if req then
+            if req > slowCCcount then
+                log("-", "Suspected slow attack. "..now_ip)
+                say_html("疑似慢速攻击访问，请稍后再试")
+                return true
+            end
+        end
+        return false
+    end
+end
+
+
+
+--异常代理检测，防止使用特定地址绕过WAF
+function Abnormal_Proxy_Check()
+   if abnormal_proxy_check and ngx.var.http_x_forwarded_for then
+       if abnormal_proxy_rules ~=nil then
+           for _,abnormal_rule in pairs(abnormal_proxy_rules) do
+               if ngxmatch(ngx.var.http_x_forwarded_for,abnormal_rule,'ijo') then
+                   log("-", "Abnormal proxy attack: ".. abnormal_rule)
+                   say_html("禁止使用非法代理访问")
+                   return true
+               end
+           end
+       end
+   end
+end

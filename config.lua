@@ -3,11 +3,16 @@ attacklog = "on"
 logdir = "/usr/local/openresty/nginx/waflogs/"
 
 
+AbnormalProxyCheck="on"
+--禁止异常代理访问，例如127.0.0.1 以防绕过waf
+
 UrlDeny="on"
 --是否拦截url访问
 
 Redirect="on"
 --是否拦截后重定向
+checkcode_path='/data/web/codeimg'
+--需要开启图片验证码时，指定图片存储路径，需要与nginx的配置文件verification_code.conf中指定的路径一致
 
 CookieMatch="on"
 --是否拦截cookie攻击
@@ -21,6 +26,16 @@ Referer="on"
 BlockRequestMethod={"TRACE","TRACK","OPTIONS","PUT","PATCH","DELETE","CONNECT"}
 --HTTP/HTTPS协议请求方法限制（限制TRACE/TRACK/OPTIONS/PUT/PATCH/DELETE/CONNECT）,不允许未知方法
 
+Bots_check="on"
+--针对白名单爬虫user-agent 开启真假验证功能
+
+ContinuousResponseCheck="off"
+--是否开启404连续异常响应码检查
+ContinuousResponseLimit="20"
+--每5分钟，允许多少次异常响应码(排除常见内嵌资源)
+
+
+
 
 white_fileExt={"bmp","jpg","png","tif","gif",
 "wps","dps","et","doc","docx","ppt","pptx","xls","xlsx","csv","obt",
@@ -30,7 +45,7 @@ white_fileExt={"bmp","jpg","png","tif","gif",
 --填写可上传的文件后缀类型(不区分大小写)
 PostMatch="on"
 --是否拦截post攻击【所有post检查的总开关】
-FileContentCheck="on"
+FileContentCheck="off"
 --是否开启文件内容检查(严格对内容进行webshell/SQL注入等高危函数检查)【post中的小开关，只针对文件上传。开启的前提是PostMatch="on"】
 
 
@@ -52,10 +67,20 @@ hostWhiteList = {"blog.whsir.com"}
 
 CCDeny="on"
 --是否开启拦截cc攻击(需要nginx.conf的http段增加lua_shared_dict limit 10m;)
-urlCCrate="2000/60"
+SpecialURL={{target_url="/register/index.html",limit_per_min=10},{target_url="/public/login",limit_per_min=6}}
+--针对特殊的URL进行每分钟限速频率，需要提供不含参数和协议的URL地址，
+--例如：SpecialURL={{target_url="/public/login",limit_per_min=90},{target_url="/register/index.htm",limit_per_min=20}}
+urlCCrate="300/60"
 -- ip访问特定url频率（次/秒）
-ipCCrate="3000/60"
+ipCCrate="1500/60"
 -- 访问ip频次检测（次/秒）,该值应该是urlCCrate的5-20倍左右
+
+
+
+SlowDos="on"
+--是否开启慢速攻击防护(408)
+SlowDosCrate="11/180"
+--慢速攻击频率设置，建议3分钟内不超过12
 
 
 CountryLimit="on"
@@ -64,6 +89,15 @@ WhiteCountry={"CN"}
 --白名单国家，优先级低于"ipBlocklist"。针对内网或无法识别的IP统一进行放行。
 BlockCountry={}
 --黑名单国家，优先级低于"ipWhitelist"。
+
+
+
+FilterID="on"
+--数据脱敏：过滤返回的身份证号码(仅支持18位的)
+FilterPhoneNumbers="on"
+--数据脱敏：过滤返回的手机号
+Desensitization_log="on"
+--数据脱敏记录日志
 
 
 html=[[

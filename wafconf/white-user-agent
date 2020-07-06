@@ -1,1 +1,10 @@
-(baidu|Googlebot)
+--参考:      蜘蛛名称       解析后名称
+--百度搜索   Baiduspider    baiduspider
+--谷歌搜索   Googlebot      googlebot
+--360搜索    360Spider      kd.ny.adsl
+--必应搜索   bingbot        msnbot
+--搜狗搜搜   Sosospider     sosospider
+--字节跳动   Bytespider     bytespider
+--搜狗蜘蛛   Sogou          sogouspider
+--神马搜索   YisouSpider    shenmaspider
+(baiduspider|googlebot|kd\.ny\.adsl|msnbot|sosospider|bytespider|sogouspider|shenmaspider)
