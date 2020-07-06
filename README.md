@@ -127,7 +127,14 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 	屏蔽异常的网络请求
 	屏蔽图片附件类目录php执行权限
 	防止webshell上传
-	
+
+
+  
+  
+  
+  
+  
+## 【安装】	 
 ### 【1】环境推荐安装:  
 1.1）推荐使用lujit2.1做lua支持  
 1.2）ngx_lua如果是0.9.2以上版本，建议正则过滤函数改为ngx.re.find，匹配效率会提高三倍左右。  
