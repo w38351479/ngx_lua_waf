@@ -9,6 +9,8 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 
 ## 【**】正在二次开发中的功能  
 1、针对疑似机器人访问行为，浮层滑块验证，不再是单纯返回403，加入可以选功能图片验证码  
+2、使用redis存储CC攻击时的统计数据
+3、使用redis存储攻击日记统计数据，应对大日志（超过1G）分析过慢及CPU负载较高  
 
   
 ## 【2020.07.06】 
@@ -108,7 +110,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 
 
 
-## 【**】增加功能如下  
+## 【别人的】增加功能如下  
 1、增加黑白名单网段IP限制，例如：ipWhitelist={"127.0.0.1","172.16.1.0-172.16.1.255"}  
 2、增加User-Agent白名单，用来过滤蜘蛛的。在wafconf文件夹下white-user-agent文件中添加  
 3、增加server_name白名单。  
