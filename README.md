@@ -188,6 +188,7 @@ openresty安装路径假设为: /usr/local/openresty
     log_by_lua_file  /usr/local/openresty/nginx/conf/waf/log_waf.lua;  
 
 其次添加管理端访问，并限制源  
+
     server {
         listen       8110;
         server_name_in_redirect off;
