@@ -186,7 +186,23 @@ openresty安装路径假设为: /usr/local/openresty
     header_filter_by_lua_file /usr/local/openresty/nginx/conf/waf/response_header_waf.lua;  
     body_filter_by_lua_file /usr/local/openresty/nginx/conf/waf/response_body_waf.lua;  
     log_by_lua_file  /usr/local/openresty/nginx/conf/waf/log_waf.lua;  
-		
+
+其次添加管理端访问，并限制源  
+    server {
+        listen       8110;
+        server_name_in_redirect off;
+        location /waf_analysis {
+            default_type text/html;
+            content_by_lua_file /usr/local/openresty/nginx/conf/waf/analysis_log.lua;
+            allow 192.168.0.0/16;
+            allow 172.16.0.0/12;
+            allow 10.0.0.0/8;
+            allow 127.0.0.1;
+            deny all;
+        }
+    }  
+    
+    
 2.3）配置config.lua里的waf规则目录
 
     RulePath = "/usr/local/openresty/nginx/conf/waf/wafconf/"
