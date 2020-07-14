@@ -4,7 +4,7 @@ function getCountry()
    local geo=require "area/maxminddb"
    local now_ip = getClientIp()
    if not geo.initted() then
-       geo.init("waf/area/GeoLite2-Country.mmdb")
+       geo.init("/usr/local/openresty/nginx/conf/waf/area/GeoLite2-Country.mmdb")
    end
    local res,err=geo.lookup(now_ip)
 
@@ -14,6 +14,7 @@ function getCountry()
        return res["country"]["iso_code"]
    end
 end
+
 
 -- 国家白名单验证;如果开启国家验证，建议开启蜘蛛验证，并在参数内填写你允许的搜索引擎蜘蛛
 function country_white()

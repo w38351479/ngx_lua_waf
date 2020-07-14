@@ -24,6 +24,80 @@ FileContentCheck = optionIsOn(FileContentCheck)
 config_bots_check = optionIsOn(Bots_check)
 ContinuousResponse = optionIsOn(ContinuousResponseCheck)
 SlowDos = optionIsOn(SlowDos)
+RedisLogAttacks = optionIsOn(RedisLogAttacks)
+
+
+
+
+--使用Redis存储客户访问信息
+function RedisConnect(redis_host, redis_port, redis_passwd)
+    local redis = require "resty.redis"
+    local red = redis:new()
+    red:set_timeout(2000)
+    local ok, err = red:connect(redis_host, redis_port)
+    if not ok then
+        ngx.log(ngx.ERR,"can't connect to redis: " .. err )
+        return nil
+    end
+    -- 如果访问redis不需要密码，这段代码可以省略
+    if redis_passwd ~= nil and redis_passwd ~= ngx.null then
+        -- 如果需要密码，来自连接池的链接不需要再进行auth验证；如果不做这个判断，连接池不起作用
+        local count, err_count = red:get_reused_times()
+        if type(count) == 'number' and count == 0 then
+            local ok, err = red:auth(redis_passwd)
+            if not ok then
+                ngx.log(ngx.ERR,"redis auth error: " .. err )
+                return nil
+            end
+        elseif err then
+            ngx.log(ngx.ERR,"failed to authenticate: " .. err_count)
+            red:close()
+            return nil
+        end
+    end
+    return red
+end
+
+
+function RedisGET(log_key)
+    local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+    local req, _ = redis_conn:get(log_key)
+    if req ~= ngx.null then
+        return req
+    else
+        return 0
+    end
+    redis_conn:close()
+end
+
+--redis有序集合，用于存储攻击IP记录统计
+function RedisZSET(type_key,z_key)
+    if RedisLogAttacks then
+        local riqi = os.date("%Y-%m-%d")
+        local type_day_key = type_key .. riqi
+        local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+        local req, _ = redis_conn:zrank(type_day_key,z_key)
+        if req ~= ngx.null then
+            redis_conn:zincrby(type_day_key,-1,z_key)
+        else
+            redis_conn:zadd(type_day_key,100000000,z_key)
+            redis_conn:expire(type_day_key, 15552000)
+        end
+        redis_conn:close()
+    end
+end
+--获取前X的排名
+function RedisZGET(type_day_key)
+    local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+    local req,err = redis_conn:zrangebyscore(type_day_key,0,100000000,'WITHSCORES','LIMIT',0,20)
+    if req ~= ngx.null and not err then
+        return req
+    else
+        return 0
+    end
+    redis_conn:close()
+end
+
 
 
 
@@ -98,6 +172,23 @@ function Filelog(logfilename,fn,finfo,t_rule)
     end
 end
 
+
+--redis记录统计数据
+function RedisLog(log_key)
+    if RedisLogAttacks then
+        local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+        local t_key = ngx.today() .. '#' .. log_key
+        local req, _ = redis_conn:get(t_key)
+        if req ~= ngx.null then
+            redis_conn:incr(t_key)
+        else
+            redis_conn:set(t_key,1)
+        end
+        redis_conn:close()
+    end
+end
+
+
 function ipToDecimal(ckip)
     local n = 4
     local decimalNum = 0
@@ -161,7 +252,7 @@ function whiteurl()
     if WhiteCheck then
         if wturlrules ~=nil then
             for _,rule in pairs(wturlrules) do
-                if ngxmatch(ngx.var.request_uri,rule,"isjo") then
+                if ngxmatch(unescape(ngx.var.request_uri),rule,"isjo") then
                     return true
                 end
             end
@@ -176,6 +267,7 @@ function whitehost()
         for host in pairs(items) do
             if ngxmatch(ngx.var.host, host, "isjo") then
                 log("-","white host: ".. host)
+                RedisLog('while_host_v')
                 return true
             end
         end
@@ -186,14 +278,25 @@ end
 function args()
     for _,rule in pairs(argsrules) do
         if ngxmatch(unescape(ngx.var.request_uri),rule,"isjo") then
-            log("-","args in attack rules: " ..rule)
-            say_html("URL参数异常")
+            if ngxmatch(rule,"(and|select|sleep|benchmark|from|database|into|group)","isjo") then
+                log("-","args sql in attack rules: " ..rule)
+                RedisLog("args_sql_attack")
+                RedisZSET('SQL#',getClientIp())
+                say_html("URL参数异常SQL关键字")
+            else
+                log("-","args in attack rules: " ..rule)
+                RedisLog("args_attack")
+                say_html("URL参数异常")
+            end
             return true
         end
-        local args = ngx.req.get_uri_args()
+        --默认最大接收参数是100个，为了防溢出攻击和灵活性，改为自定义
+        local args = ngx.req.get_uri_args(tonumber(max_get_vars) + 10)
+        local tmp_nu = 0
         for key, val in pairs(args) do
             if type(val)=='table' then
-                 local t={}
+                 tmp_nu = tmp_nu + #val
+                 local t={}         
                  for k,v in pairs(val) do
                      if v == true then
                          v=""
@@ -202,13 +305,28 @@ function args()
                  end
                  data=table.concat(t, " ")
             else
+                tmp_nu = tmp_nu + 1
                 data=val
             end
             if data and type(data) ~= "boolean" and rule ~="" and ngxmatch(unescape(data),rule,"isjo") then
-                log("-", "args in attack rules: " .. rule .. " data: " .. tostring(data))
-                say_html("URL参数异常")
+                if ngxmatch(rule,"(and|select|sleep|benchmark|from|database|into|group)","isjo") then
+                    log("-","args sql in attack rules: " ..rule .. " data: " .. tostring(data))
+                    RedisLog("args_sql_attack")
+                    RedisZSET('SQL#',getClientIp())
+                    say_html("URL参数异常SQL关键字")
+                else
+                    log("-", "args in attack rules: " .. rule .. " data: " .. tostring(data))
+                    RedisLog("args_attack")
+                    say_html("URL参数异常")
+                end
                 return true
             end
+        end
+        --GET参数长度检测，防止溢出攻击
+        if tmp_nu > tonumber(max_get_vars) then
+            log("-","Get too many parameters.")
+            say_html("GET URL参数过多")
+            ngx.exit(403)
         end
     end
     return false
@@ -219,8 +337,10 @@ end
 function url()
     if UrlDeny then
         for _,rule in pairs(urlrules) do
-            if rule ~="" and ngxmatch(ngx.var.request_uri,rule,"isjo") then
+            if rule ~="" and ngxmatch(unescape(ngx.var.request_uri),rule,"isjo") then
                 log("-", "url in attack rules: " .. rule)
+                RedisLog("url_attack")
+                RedisZSET('SensitiveFile#',getClientIp())
                 say_html("URL拦截命中")
                 return true
             end
@@ -234,6 +354,7 @@ function ua()
     --不允许ua为空
     if ua == nil then
         log("-", "ua in attack rules: " .. "UA is nil, this is not a normal visit")
+        RedisLog("ua_attack")
         say_html("UA不正常")
         return true
     end
@@ -241,6 +362,8 @@ function ua()
         for _,rule in pairs(uarules) do
             if rule ~="" and ngxmatch(ua,rule,"isjo") then
                 log("-", "ua in attack rules: " .. rule)
+                RedisLog("ua_attack")
+                RedisZSET("ForbidUA#",getClientIp())
                 say_html("UA拦截命中")
                 return true
             end
@@ -255,8 +378,18 @@ function body(data)
     end
     for _,rule in pairs(postrules) do
         if rule ~="" and data~="" and ngxmatch(unescape(data),rule,"isjo") then
-            log(data,rule)
-            say_html("Body POST拦截命中")
+            if ngxmatch(rule,"(select|sleep|information_schema|database)","isjo") then
+                --log(data,"Body POST SQL in attack rules: " .. rule)
+                log("-","Body POST SQL in attack rules: " .. rule)
+                RedisLog("body_post_sql_attack")
+                RedisZSET('SQL#',getClientIp())
+                say_html("Body POST拦截命中SQL")
+            else
+                --log(data,"Body POST in attack rules: " .. rule)
+                log("-","Body POST in attack rules: " .. rule)
+                RedisLog("body_sql_attack")
+                say_html("Body POST拦截命中")
+            end
             return true
         end
     end
@@ -270,8 +403,16 @@ function cookie()
     if CookieCheck and ck then
         for _,rule in pairs(ckrules) do
             if rule ~="" and ngxmatch(ck,rule,"isjo") then
-                log("-", "cookie in attack rules: " .. rule)
-                say_html("Cookie异常,疑似攻击")
+                if ngxmatch(rule,"(and|select|sleep|benchmark|from|database|into|group)","isjo") then
+                    log("-", "cookie sql in attack rules: " .. rule)
+                    RedisLog("cookie_sql_attack")
+                    RedisZSET('SQL#',getClientIp())
+                    say_html("Cookie异常,疑似SQL攻击")
+                else
+                    log("-", "cookie in attack rules: " .. rule)
+                    RedisLog("cookie_attack")
+                    say_html("Cookie异常,疑似攻击")
+                end
                 return true
             end
         end
@@ -297,22 +438,34 @@ function denycc()
         local ipCCcount = tonumber(string.match(ipCCrate, "(.*)/"))
         local ipCCseconds = tonumber(string.match(ipCCrate, "/(.*)"))
         local now_ip = getClientIp()
-        local token = now_ip .. '.' ..uri
-        local urllimit = ngx.shared.urllimit
-        local iplimit = ngx.shared.iplimit
-        local req, _ = urllimit:get(token)
-        local ipreq, _ = iplimit:get(now_ip)
+        local token = now_ip .. '#' ..uri
+        local urllimit,iplimit,req,ipreq=nil,nil,nil,nil
+        if RedisLogAttacks then
+            urllimit = RedisConnect(redis_host, redis_port, redis_passwd)
+            iplimit = RedisConnect(redis_host, redis_port, redis_passwd)
+        else
+            urllimit = ngx.shared.urllimit
+            iplimit = ngx.shared.iplimit
+        end
+        req, _ = urllimit:get(token)
+        ipreq, _ = iplimit:get(now_ip)
         local teshu = true
 
         --优先处理特殊的URL频次检测
-        if req then
+        if req and req ~= ngx.null then
             --特殊的URL频次检测
             if SpecialURL ~= nil and table.getn(SpecialURL) ~= 0 then
                 for _,t in pairs(SpecialURL) do
                     if uri == b64.encode_base64url(t["target_url"]) then
-                        if req > t["limit_per_min"] then
+                        if tonumber(req) > tonumber(t["limit_per_min"]) then
                             log("-", "IP get url over times. ")
-                            say_html("IpURL频繁访问限制z，请稍后再试")
+                            RedisLog("url_more")
+                            RedisZSET('CC#',now_ip)
+                            say_html("IpURL频繁访问限制，请稍后再试")
+                            if RedisLogAttacks then
+                                urllimit:close()
+                                iplimit:close()
+                            end
                             return true
                         else
                             teshu = false
@@ -321,27 +474,61 @@ function denycc()
                 end
             end
             -- ip访问url频次检测
-            if req > CCcount and teshu then
+            if tonumber(req) > tonumber(CCcount) and teshu then
                 log("-", "IP get url over times. ")
+                RedisLog("url_more")
+                RedisZSET('CC#',now_ip)
                 say_html("IpURL频繁访问限制，请稍后再试")
+                if RedisLogAttacks then
+                    urllimit:close()
+                    iplimit:close()
+                end
                 return true
             else
-                urllimit:incr(token, 1)
+                if RedisLogAttacks then
+                    urllimit:incr(token)
+                else
+                    urllimit:incr(token,1)
+                end
             end
         else
-            urllimit:set(token, 1, CCseconds)
+            if RedisLogAttacks then
+                urllimit:set(token, 1)
+                urllimit:expire(token, CCseconds)
+            else
+                urllimit:set(token, 1, CCseconds)
+            end
         end
 
-        if ipreq then -- 访问ip频次检测
-            if ipreq > ipCCcount then
+        if ipreq and ipreq ~= ngx.null then -- 访问ip频次检测
+            if tonumber(ipreq) > tonumber(ipCCcount) then
                 log("-", "IP get host over times. ")
+                RedisLog("ip_more")
+                RedisZSET('CC#',now_ip)
                 say_html("IP频繁访问限制，请稍后再试")
+                if RedisLogAttacks then
+                    urllimit:close()
+                    iplimit:close()
+                end
                 return true
             else
-                iplimit:incr(now_ip, 1)
+                if RedisLogAttacks then
+                    iplimit:incr(now_ip)
+                else
+                    iplimit:incr(now_ip, 1)
+                end
             end
         else
-            iplimit:set(now_ip, 1, ipCCseconds)
+            if RedisLogAttacks then
+                urllimit:set(now_ip, 1)
+                urllimit:expire(now_ip, ipCCseconds)
+             else
+                iplimit:set(now_ip, 1, ipCCseconds)
+            end
+        end
+        if RedisLogAttacks then
+            urllimit:close()
+            iplimit:close()
         end
     end
     return false
@@ -357,15 +544,55 @@ function whiteua()
             if rule ~="" and ngxmatch(ua,rule,"isjo") then
                 -- 验证蜘蛛真假；判断是否开启验证，且是否属于蜘蛛
                 if config_bots_check  then
-                    -- 验证蜘蛛真假,host 反查ip
-                    local handle = io.popen("host " ..now_ip)
-                    local result = handle:read("*all")
-                    handle:close()
-                    --检查是否包含验证域名
-                    if not ngxmatch(result,rule,"ijo") then
-                        log("-", "Suspected forged reptile: "..rule)
-                        say_html("疑似伪造爬虫，禁止访问")
-	                return true
+                    local token ="FakeSpider#" .. now_ip
+                    if RedisLogAttacks then
+                        local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+                        local req, _ = redis_conn:get(token)                   
+                        if req ~= ngx.null then
+                            log("-", "Suspected forged reptile: "..rule)
+                            RedisLog("forge_ua")
+                            say_html("疑似伪造爬虫，未过禁止访问期")
+                            ngx.exit(403)
+                            return true 
+                        else
+                            local handle = io.popen("host " ..now_ip)
+                            local result = handle:read("*all")
+                            handle:close()
+                            if not ngxmatch(result,rule,"ijo") then
+                                redis_conn:set(token, 1)
+                                redis_conn:expire(token, BlockBotsTime)
+                                log("-", "Suspected forged reptile: "..rule)
+                                RedisLog("forge_ua")
+                                say_html("疑似伪造爬虫，禁止访问")
+                                ngx.exit(403)
+                                return true
+                            end
+                        end
+                    else
+                        local iplimit,ipreq=nil,nil
+                        iplimit = ngx.shared.iplimit
+                        ipreq, _ = iplimit:get(token)
+                        if ipreq then
+                            log("-", "Suspected forged reptile: "..rule)
+                            RedisLog("forge_ua")
+                            say_html("疑似伪造爬虫，未过禁止访问期")
+                            ngx.exit(403)
+    	                    return true
+                        else
+                            -- 验证蜘蛛真假,host 反查ip
+                            local handle = io.popen("host " ..now_ip)
+                            local result = handle:read("*all")
+                            handle:close()
+                            --检查是否包含验证域名
+                            if not ngxmatch(result,rule,"ijo") then
+                                log("-", "Suspected forged reptile: "..rule)
+                                RedisLog("forge_ua")
+                                say_html("疑似伪造爬虫，禁止访问")
+                                iplimit:set(token, 1, BlockBotsTime)
+                                ngx.exit(403)
+                                return true
+                            end
+                        end
                     end
                 end
                 return true
@@ -490,10 +717,12 @@ function fileExtCheck(ext,fn,finfo)
         for rule in pairs(items) do
             if string.lower(rule) == ext then 
                 Filelog('UploadFile',fn,finfo,"Allowed file suffixes.")
+                RedisLog("allow_suffixes")
                 return true
             end
         end
         Filelog('UploadFileFailed',fn,finfo,"File suffix is not supported.")
+        RedisLog("not_support_suffixes")
         say_html('该类型文件不允许上传：'..ext)
     end
     return false
@@ -554,6 +783,7 @@ function RefererLimit()
         for _,brrule in pairs(blockreferer) do
             if ngxmatch(h_ref,brrule,"isjo") then
                 log("-","BlockReferer in attack rules: " .. brrule)
+                RedisLog("blockReferer")
                 ngx.exit(403)
                 return true
             end
@@ -571,6 +801,7 @@ function Block_RequestMethod()
         for re_me_rule in pairs(items) do
             if ngxmatch(re_method,re_me_rule,"ijo") then
                 log("-","Request method not allowed: " .. re_me_rule)
+                RedisLog("bad_request_method")
                 say_html("非法请求方法："..re_method)
                 return true
             end
@@ -578,29 +809,26 @@ function Block_RequestMethod()
         return false
     else
         log("-","Request method not allowed: null")
+        RedisLog("bad_request_method")
         ngx.exit(403)
         return true
     end
 end
 
 
---连续异常响应码拦截
+--连续404异常响应码拦截
 function ContinuousAnomaliesCheck()
     if ContinuousResponse then
-        local respstatus = ngx.shared.respstatus
-        local ContinuousResponseLimit = tonumber(ContinuousResponseLimit)
+        local ContinuousResponseC = tonumber(string.match(ContinuousResponseLimit, "(.*)/"))
         local now_ip = getClientIp()
-        local tmp_num = 0
-        if table.getn(respstatus:get_keys()) > 0 then
-            for k,v in pairs(respstatus:get_keys()) do
-                local IP_v = split(v,'#')
-                if IP_v[1] == now_ip then
-                    tmp_num = tmp_num + 1
-                end
-            end
-            if tmp_num >= ContinuousResponseLimit then
-
+        local token = '404#' .. now_ip 
+        local respstatus = ngx.shared.respstatus
+        local req, _ = respstatus:get(token)
+        if req then
+            if tonumber(req) > tonumber(ContinuousResponseC) then
                 log("-","Continuous request exception response: "..now_ip)
+                RedisLog("continuous_request")
+                RedisZSET('Resp404#',now_ip)
                 say_html("连续响应异常状态码")
                 ngx.exit(403)
                 return true
@@ -612,16 +840,19 @@ end
 
 
 
---http慢速攻击
+--http慢速攻击408
 function SlowDosCheck()
     if SlowDos then
         local now_ip = getClientIp()
+        local token = '408#' .. now_ip
         local slowCCcount = tonumber(string.match(SlowDosCrate, "(.*)/"))
         local respstatus = ngx.shared.respstatus
-        local req, _ = respstatus:get(now_ip)
+        local req, _ = respstatus:get(token)
         if req then
             if req > slowCCcount then
                 log("-", "Suspected slow attack. "..now_ip)
+                RedisLog("slow_attack")
+                RedisZSET('Resp408#',now_ip)
                 say_html("疑似慢速攻击访问，请稍后再试")
                 return true
             end
@@ -639,6 +870,7 @@ function Abnormal_Proxy_Check()
            for _,abnormal_rule in pairs(abnormal_proxy_rules) do
                if ngxmatch(ngx.var.http_x_forwarded_for,abnormal_rule,'ijo') then
                    log("-", "Abnormal proxy attack: ".. abnormal_rule)
+                   RedisLog("abnormal_proxy_attack")
                    say_html("禁止使用非法代理访问")
                    return true
                end

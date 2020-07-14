@@ -9,9 +9,23 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 
 ## 【**】正在二次开发中的功能  
 1、针对疑似机器人访问行为，浮层滑块验证，不再是单纯返回403，加入可以选功能图片验证码  
-2、使用redis存储CC攻击时的统计数据
-3、使用redis存储攻击日记统计数据，应对大日志（超过1G）分析过慢及CPU负载较高  
-
+【Bug修复】  
+ 
+  
+  
+  
+## 【2020.07.14】 
+1、使用redis存储CC攻击时的统计数据  
+2、使用redis存储攻击日记统计数据，应对大日志（超过1G）分析过慢及CPU负载较高  
+3、使用redis记录攻击重点的客户端IP，统计分析展现  
+4、新增url访问配置文件保护规则，参考https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/restricted-files.data  
+5、新增UA限制规则，参考https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scanners-user-agents.data和https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scripting-user-agents.data  
+6、新增GET/POST参数个数限制，以防溢出攻击（ps：默认最大是100个）
+**【Bug修复】** 
+1、修复手机号码正则表达式不准确问题  
+2、openresty的unescape_uri函数处理百分号 ，参考：https://www.cnxct.com/openresty-unescape_uri-feature-to-decode-char-after-percent-sign/解决： 你自己修改后重新编译  
+3、调整国家限制功能位置，不能放在最后。同时mmdb数据库应该填写完整路径。   
+  
   
 ## 【2020.07.06】 
 1、添加user-agent规则。支持如wordpress/pingback等常见CC变种型攻击防护  
@@ -139,7 +153,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 1.1）推荐使用lujit2.1做lua支持  
 1.2）ngx_lua如果是0.9.2以上版本，建议正则过滤函数改为ngx.re.find，匹配效率会提高三倍左右。  
 1.3）推荐直接使用openresty部署，而不是自己手动部署nginx+lua，下面安装示例使用“openresty/1.15.8.3”  
-1.4）推荐编译安装openresty时添加后端检查模块 “[nginx_upstream_check_module](https://github.com/yaoweibin/nginx_upstream_check_module)”,并添加模块参数“--with-http_geoip_module”  
+1.4）推荐编译安装openresty时添加后端检查模块 “[--add-module=../nginx_upstream_check_module](https://github.com/yaoweibin/nginx_upstream_check_module)”,并添加模块参数“--add-module=../ngx_http_geoip2_module”(https://github.com/leev/ngx_http_geoip2_module)  
 
 
 ### 【2】安装使用说明：  

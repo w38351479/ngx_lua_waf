@@ -3,6 +3,15 @@ attacklog = "on"
 logdir = "/usr/local/openresty/nginx/waflogs/"
 
 
+RedisLogAttacks="on"
+--是否启用Redis记录攻击数据，如果为off，则采用nginx内存共享方式记录，推荐开启
+redis_host="127.0.0.1"
+--地址要使用IP方式
+redis_port="6379"
+redis_passwd="Redis90yh90nweui63bkjNoinfjkbKbiNK"
+--启用Redis时配置连接信息
+
+
 AbnormalProxyCheck="on"
 --禁止异常代理访问，例如127.0.0.1 以防绕过waf
 
@@ -28,11 +37,14 @@ BlockRequestMethod={"TRACE","TRACK","OPTIONS","PUT","PATCH","DELETE","CONNECT"}
 
 Bots_check="on"
 --针对白名单爬虫user-agent 开启真假验证功能
+BlockBotsTime="600"
+--阻止假蜘蛛N秒内继续访问
 
-ContinuousResponseCheck="off"
+
+ContinuousResponseCheck="on"
 --是否开启404连续异常响应码检查
-ContinuousResponseLimit="20"
---每5分钟，允许多少次异常响应码(排除常见内嵌资源)
+ContinuousResponseLimit="30/300"
+--允许多少次异常响应码(排除常见内嵌资源)
 
 
 
@@ -67,12 +79,12 @@ hostWhiteList = {"blog.whsir.com"}
 
 CCDeny="on"
 --是否开启拦截cc攻击(需要nginx.conf的http段增加lua_shared_dict limit 10m;)
-SpecialURL={{target_url="/register/index.html",limit_per_min=10},{target_url="/public/login",limit_per_min=6}}
+SpecialURL={{target_url="/register/index.html",limit_per_min="20"},{target_url="/public/login",limit_per_min="6"},{target_url="/api-interface/activity-user-import-check",limit_per_min="70"}}
 --针对特殊的URL进行每分钟限速频率，需要提供不含参数和协议的URL地址，
 --例如：SpecialURL={{target_url="/public/login",limit_per_min=90},{target_url="/register/index.htm",limit_per_min=20}}
-urlCCrate="300/60"
+urlCCrate="2500/60"
 -- ip访问特定url频率（次/秒）
-ipCCrate="1500/60"
+ipCCrate="3800/60"
 -- 访问ip频次检测（次/秒）,该值应该是urlCCrate的5-20倍左右
 
 
@@ -85,10 +97,17 @@ SlowDosCrate="11/180"
 
 CountryLimit="on"
 --否开启IP源的国家限制，黑白名单。国家代码参考[ISO_3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) 
-WhiteCountry={"CN"}
+--WhiteCountry={"CN"}
+WhiteCountry={}
 --白名单国家，优先级低于"ipBlocklist"。针对内网或无法识别的IP统一进行放行。
-BlockCountry={}
+BlockCountry={"US"}
 --黑名单国家，优先级低于"ipWhitelist"。
+
+
+max_get_vars="80"
+--设置get请求最大参数数量
+max_post_vars="1000"
+--设置post请求最大参数数量
 
 
 

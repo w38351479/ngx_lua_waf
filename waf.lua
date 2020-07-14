@@ -20,6 +20,8 @@ elseif ua() then
 elseif url() then
 elseif args() then
 elseif cookie() then
+elseif country_white() then
+elseif country_block() then
 elseif PostCheck then
     if method=="POST" then  
         local boundary = get_boundary()
@@ -80,29 +82,37 @@ elseif PostCheck then
     	    end
     	    ngx.req.finish_body()
         else
+            --post 参数检查
             ngx.req.read_body()
-            local args = ngx.req.get_post_args()
+            local args = ngx.req.get_post_args(tonumber(max_post_vars) + 10)
             if not args then
                 return
             end
+            local tmp_post_nu = 0
             for key, val in pairs(args) do
                 if type(val) == "table" then
+                    tmp_post_nu = tmp_post_nu + #val
                     if type(val[1]) == "boolean" then
                         return
                     end
                     data=table.concat(val, ", ")
                 else
                     data=val
+                    tmp_post_nu = tmp_post_nu + 1
                 end
                 if data and type(data) ~= "boolean" and body(data) then
-                    --文件内容检查
+                    --内容检查
                     body(key)
                 end
             end
+            --post 参数数量检查，防止溢出攻击
+            if tmp_post_nu > tonumber(max_post_vars) then
+                log("-","Post too many parameters.")
+                say_html("POST URL参数过多")
+                ngx.exit(403)
+            end
         end
     end
-elseif country_white() then
-elseif country_block() then
 else
     return
 end

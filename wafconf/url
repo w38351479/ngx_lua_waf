@@ -1,6 +1,20 @@
-\.(svn|git|htaccess|bash_history|DS_Store)
+\.(svn|git|htaccess|bash_history|DS_Store|hg)
+\.(htdigest|htpasswd|bash_config|bash_history|bash_logout|bash_profile|bashrc|cshrc|gitconfig|ksh_history|lesshst|env|htdigest)
+\.(lhistory|lldb-history|mycnf|mysql_history|nano_history|node_repl_history|nsr|pearrc|php_history|profile|psql_history|python_history|rediscli_history)
+\.(Rhistory|sh_history|sqlite_history|tcshrc|viminfo|vimrc|xauthority|zhistory|zshrc|zsh_history|nsconfig|netrc|boto|idea|bowerrc|eslintrc|jshintrc)
+\.(drush|gnupg|lftp|localsharemc|pki|thunderbird|vmware|kube|java|anydesk|docker|npm|nvm|minikube|atom|cups|dbus|gem|gnonme|gsutil)/
+\.(ssh/authorized_keys|ssh/config|ssh/id_dsa|ssh/id_dsapub|ssh/id_rsa|ssh/id_rsapub|ssh/identity|ssh/identitypub|ssh/known_hosts|subversion/auth|subversion/config|subversion/servers)
+\.(tconn/tconnconf|vidalia/vidaliaconf|aws/config|aws/credentials|aptitude/config|cache/notify-osdlog|config/odesk/odesk teamconf|hplip/hplipconf)
+\.(gitlab-ci|travis)\.yml
+/(config/config|config/config_dev|config/config_prod|config/config_test|config/parameters|config/routing|config/security|config/services)\.yml
 \.(bak|inc|old|mdb|sql|backup|java|class)$
 (vhost|bbs|host|wwwroot|www|site|root|hytop|flashfxp).*\.rar
-(phpmyadmin|jmx-console|jmxinvokerservlet)
+(phpmyadmin|jmx-console|jmxinvokerservlet|Dockerfile)
 java\.lang
+bower\.json
+database\.yml
+/(gruntfile|webpack\.config)\.js
+/(yarn|composer)\.lock
+/(sites/default/default.settings|sites/default/settings|sites/default/settings.local)\.php
 /(attachments|upimg|images|css|uploadfiles|html|uploads|templets|static|template|data|inc|forumdata|upload|includes|cache|avatar)/(\w+).(php|jsp)
+/(sftp-config|package|package-lock|ormconfig|tsconfig|composer|packages)\.json
