@@ -25,6 +25,9 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 1、修复手机号码正则表达式不准确问题  
 2、openresty的unescape_uri函数处理百分号 ，参考：https://www.cnxct.com/openresty-unescape_uri-feature-to-decode-char-after-percent-sign/解决： 你自己修改后重新编译  
 3、调整国家限制功能位置，不能放在最后。同时mmdb数据库应该填写完整路径。   
+【效果展示】  
+![image](https://raw.githubusercontent.com/wiki/w38351479/ngx_lua_waf/waf01.png)   
+![image](https://raw.githubusercontent.com/wiki/w38351479/ngx_lua_waf/waf02.png)   
   
   
 ## 【2020.07.06】 
