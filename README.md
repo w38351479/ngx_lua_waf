@@ -128,8 +128,10 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 1、使用redis存储CC攻击时的统计数据  
 2、使用redis存储攻击日记统计数据，应对大日志（超过1G）分析过慢及CPU负载较高  
 3、使用redis记录攻击重点的客户端IP，统计分析展现  
-4、新增url访问配置文件保护规则，参考https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/restricted-files.data  
-5、新增UA限制规则，参考https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scanners-user-agents.data和https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scripting-user-agents.data  
+4、新增url访问配置文件保护规则，参考  
+https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/restricted-files.data  
+5、新增UA限制规则，参考  https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scanners-user-agents.data  
+和 https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scripting-user-agents.data  
 6、新增GET/POST参数个数限制，以防溢出攻击（ps：默认最大是100个）  
 **【Bug修复】**   
 1、修复手机号码正则表达式不准确问题  
