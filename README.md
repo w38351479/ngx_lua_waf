@@ -12,6 +12,65 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 【Bug修复】  
  
   
+## 【2020.07.X】 
+1、使用redis存储正常的白名单蜘蛛IP，减少网络查询。并提供了一些验证过的IP大致范围（PS后期自己更新）
+参考IP：  
+  #http://hoohtml.com/tools/webspider/
+  #baiduspider
+  123.125.66.*
+  220.181.108.*
+  123.125.71.*
+  180.76.5.*
+  220.181.32.*
+  61.135.168.*
+  #googlebot
+  203.208.60.*
+  66.249.64.*
+  66.249.65.*
+  66.249.66.*
+  66.249.68.*
+  66.249.69.*
+  66.249.70.*
+  66.249.71.*
+  66.249.72.*
+  66.249.73.*
+  #google-proxy
+  66.102.6.*
+  66.102.7.*
+  66.102.8.*
+  66.102.9.*
+  #360Spider
+  182.118.*.*
+  #sogouspider
+  123.126.113.*
+  218.30.103.*
+  61.135.189.*
+  #shenmaspider
+  42.156.136.*
+  42.156.137.*
+  42.156.138.*
+  42.156.139.*
+  42.120.160.*
+  42.120.161.*
+  #msnbot(bing)
+  157.55.39.*
+  40.77.167.*
+  207.46.13.*
+  65.52.110.*
+  #bytespider
+  111.225.149.*
+  110.249.202.*
+  #youdaobot
+  61.135.249.220
+  #petalbot
+  114.119.160.*
+  114.119.161.*
+  114.119.162.*
+  114.119.163.*
+  114.119.164.*
+  114.119.165.*
+  114.119.166.*
+  114.119.167.*
   
   
 ## 【2020.07.14】 
@@ -21,7 +80,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 4、新增url访问配置文件保护规则，参考https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/restricted-files.data  
 5、新增UA限制规则，参考https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scanners-user-agents.data和https://github.com/SpiderLabs/owasp-modsecurity-crs/blob/v3.3/dev/rules/scripting-user-agents.data  
 6、新增GET/POST参数个数限制，以防溢出攻击（ps：默认最大是100个）  
-**【Bug修复】** 
+**【Bug修复】**   
 1、修复手机号码正则表达式不准确问题  
 2、openresty的unescape_uri函数处理百分号 ，参考：https://www.cnxct.com/openresty-unescape_uri-feature-to-decode-char-after-percent-sign/解决： 你自己修改后重新编译  
 3、调整国家限制功能位置，不能放在最后。同时mmdb数据库应该填写完整路径。   
