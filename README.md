@@ -13,7 +13,8 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
  
   
 ## 【2020.07.X】 
-1、使用redis存储正常的白名单蜘蛛IP，减少网络查询。并提供了一些验证过的IP大致范围（PS后期自己更新）
+1、更新白名单UA规则  
+2、使用redis存储正常的白名单蜘蛛IP，减少网络查询。并提供了一些验证过的IP大致范围（PS后期自己更新）  
 参考IP：  
   
     #http://hoohtml.com/tools/webspider/
@@ -72,6 +73,54 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     114.119.165.*
     114.119.166.*
     114.119.167.*
+  
+插入redis命令：  
+    lpush white_spider#baiduspider 123.125.66.*
+    lpush white_spider#baiduspider 220.181.108.*
+    lpush white_spider#baiduspider 123.125.71.*
+    lpush white_spider#baiduspider 180.76.5.*
+    lpush white_spider#baiduspider 220.181.32.*
+    lpush white_spider#baiduspider 61.135.168.*
+    lpush white_spider#googlebot 203.208.60.*
+    lpush white_spider#googlebot 66.249.64.*
+    lpush white_spider#googlebot 66.249.65.*
+    lpush white_spider#googlebot 66.249.66.*
+    lpush white_spider#googlebot 66.249.68.*
+    lpush white_spider#googlebot 66.249.69.*
+    lpush white_spider#googlebot 66.249.70.*
+    lpush white_spider#googlebot 66.249.71.*
+    lpush white_spider#googlebot 66.249.72.*
+    lpush white_spider#googlebot 66.249.73.*
+    lpush white_spider#google-proxy 66.102.6.*
+    lpush white_spider#google-proxy 66.102.7.*
+    lpush white_spider#google-proxy 66.102.8.*
+    lpush white_spider#google-proxy 66.102.9.*
+    lpush white_spider#kd\.ny\.ads 182.118.*.*
+    lpush white_spider#sogouspider 123.126.113.*
+    lpush white_spider#sogouspider 218.30.103.*
+    lpush white_spider#sogouspider 61.135.189.*
+    lpush white_spider#shenmaspider 42.156.136.*
+    lpush white_spider#shenmaspider 42.156.137.*
+    lpush white_spider#shenmaspider 42.156.138.*
+    lpush white_spider#shenmaspider 42.156.139.*
+    lpush white_spider#shenmaspider 42.120.160.*
+    lpush white_spider#shenmaspider 42.120.161.*
+    lpush white_spider#msnbot 157.55.39.*
+    lpush white_spider#msnbot 40.77.167.*
+    lpush white_spider#msnbot 207.46.13.*
+    lpush white_spider#msnbot 65.52.110.*
+    lpush white_spider#bytespider 111.225.149.*
+    lpush white_spider#bytespider 110.249.202.*
+    lpush white_spider#youdaobot 61.135.249.220
+    lpush white_spider#petalbot 114.119.160.*
+    lpush white_spider#petalbot 114.119.161.*
+    lpush white_spider#petalbot 114.119.162.*
+    lpush white_spider#petalbot 114.119.163.*
+    lpush white_spider#petalbot 114.119.164.*
+    lpush white_spider#petalbot 114.119.165.*
+    lpush white_spider#petalbot 114.119.166.*
+    lpush white_spider#petalbot 114.119.167.*
+  
   
   
 ## 【2020.07.14】 
