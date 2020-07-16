@@ -18,6 +18,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
 参考IP：  
   
     #http://hoohtml.com/tools/webspider/
+    #http://www.so.com/help/spider_ip.html
     #baiduspider
     123.125.66.*  
     220.181.108.*  
@@ -25,6 +26,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     180.76.5.*
     220.181.32.*
     61.135.168.*
+    61.135.186.*
     #googlebot
     203.208.60.*
     66.249.64.*
@@ -41,8 +43,6 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     66.102.7.*
     66.102.8.*
     66.102.9.*
-    #360Spider
-    182.118.*.*
     #sogouspider
     123.126.113.*
     218.30.103.*
@@ -73,6 +73,31 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     114.119.165.*
     114.119.166.*
     114.119.167.*
+    #360Spider（不支持PTR，只能手动更新）
+    180.153.232.*
+    180.153.234.*
+    180.153.236.*
+    180.163.220.*
+    42.236.101.*
+    42.236.102.*
+    42.236.103.*
+    42.236.10.*
+    42.236.12.*
+    42.236.13.*
+    42.236.14.*
+    42.236.15.*
+    42.236.16.*
+    42.236.17.*
+    42.236.46.*
+    42.236.48.*
+    42.236.49.*
+    42.236.50.*
+    42.236.51.*
+    42.236.52.*
+    42.236.53.*
+    42.236.54.*
+    42.236.55.*
+    42.236.99.*
   
 插入redis命令：  
   
@@ -82,6 +107,7 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     lpush white_spider#baiduspider 180.76.5.*
     lpush white_spider#baiduspider 220.181.32.*
     lpush white_spider#baiduspider 61.135.168.*
+    lpush white_spider#baiduspider 61.135.186.*
     lpush white_spider#googlebot 203.208.60.*
     lpush white_spider#googlebot 66.249.64.*
     lpush white_spider#googlebot 66.249.65.*
@@ -96,7 +122,6 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     lpush white_spider#google-proxy 66.102.7.*
     lpush white_spider#google-proxy 66.102.8.*
     lpush white_spider#google-proxy 66.102.9.*
-    lpush white_spider#kd\.ny\.ads 182.118.*.*
     lpush white_spider#sogouspider 123.126.113.*
     lpush white_spider#sogouspider 218.30.103.*
     lpush white_spider#sogouspider 61.135.189.*
@@ -121,6 +146,30 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
     lpush white_spider#petalbot 114.119.165.*
     lpush white_spider#petalbot 114.119.166.*
     lpush white_spider#petalbot 114.119.167.*
+    lpush white_spider#360Spider 180.153.232.*
+    lpush white_spider#360Spider 180.153.234.*
+    lpush white_spider#360Spider 180.153.236.*
+    lpush white_spider#360Spider 180.163.220.*
+    lpush white_spider#360Spider 42.236.101.*
+    lpush white_spider#360Spider 42.236.102.*
+    lpush white_spider#360Spider 42.236.103.*
+    lpush white_spider#360Spider 42.236.10.*
+    lpush white_spider#360Spider 42.236.12.*
+    lpush white_spider#360Spider 42.236.13.*
+    lpush white_spider#360Spider 42.236.14.*
+    lpush white_spider#360Spider 42.236.15.*
+    lpush white_spider#360Spider 42.236.16.*
+    lpush white_spider#360Spider 42.236.17.*
+    lpush white_spider#360Spider 42.236.46.*
+    lpush white_spider#360Spider 42.236.48.*
+    lpush white_spider#360Spider 42.236.49.*
+    lpush white_spider#360Spider 42.236.50.*
+    lpush white_spider#360Spider 42.236.51.*
+    lpush white_spider#360Spider 42.236.52.*
+    lpush white_spider#360Spider 42.236.53.*
+    lpush white_spider#360Spider 42.236.54.*
+    lpush white_spider#360Spider 42.236.55.*
+    lpush white_spider#360Spider 42.236.99.*
   
   
   
