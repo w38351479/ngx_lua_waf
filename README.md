@@ -19,133 +19,84 @@ ngx_lua_waf改版基于原[ngx_lua_waf](https://github.com/loveshell/ngx_lua_waf
   
     #http://hoohtml.com/tools/webspider/
     #http://www.so.com/help/spider_ip.html
-    #baiduspider
-    123.125.66.*  
-    220.181.108.*  
-    123.125.71.*
-    180.76.5.*
-    220.181.32.*
-    61.135.168.*
-    61.135.186.*
-    #googlebot
-    203.208.60.*
-    66.249.64.*
-    66.249.65.*
-    66.249.66.*
-    66.249.68.*
-    66.249.69.*
-    66.249.70.*
-    66.249.71.*
-    66.249.72.*
-    66.249.73.*
-    #google-proxy
-    66.102.6.*
-    66.102.7.*
-    66.102.8.*
-    66.102.9.*
-    #sogouspider
-    123.126.113.*
-    218.30.103.*
-    61.135.189.*
-    #shenmaspider
-    42.156.136.*
-    42.156.137.*
-    42.156.138.*
-    42.156.139.*
-    42.120.160.*
-    42.120.161.*
-    #msnbot(bing)
-    157.55.39.*
-    40.77.167.*
-    207.46.13.*
-    65.52.110.*
-    #bytespider
-    111.225.149.*
-    110.249.202.*
-    #youdaobot
-    61.135.249.220
-    #petalbot
-    114.119.160.*
-    114.119.161.*
-    114.119.162.*
-    114.119.163.*
-    114.119.164.*
-    114.119.165.*
-    114.119.166.*
-    114.119.167.*
-    #360Spider（不支持PTR，只能手动更新）
-    180.153.232.*
-    180.153.234.*
-    180.153.236.*
-    180.163.220.*
-    42.236.101.*
-    42.236.102.*
-    42.236.103.*
-    42.236.10.*
-    42.236.12.*
-    42.236.13.*
-    42.236.14.*
-    42.236.15.*
-    42.236.16.*
-    42.236.17.*
-    42.236.46.*
-    42.236.48.*
-    42.236.49.*
-    42.236.50.*
-    42.236.51.*
-    42.236.52.*
-    42.236.53.*
-    42.236.54.*
-    42.236.55.*
-    42.236.99.*
   
 插入redis命令：  
   
-    lpush white_spider#baiduspider 123.125.66.*
-    lpush white_spider#baiduspider 220.181.108.*
-    lpush white_spider#baiduspider 123.125.71.*
-    lpush white_spider#baiduspider 180.76.5.*
-    lpush white_spider#baiduspider 220.181.32.*
-    lpush white_spider#baiduspider 61.135.168.*
-    lpush white_spider#baiduspider 61.135.186.*
-    lpush white_spider#googlebot 203.208.60.*
-    lpush white_spider#googlebot 66.249.64.*
-    lpush white_spider#googlebot 66.249.65.*
-    lpush white_spider#googlebot 66.249.66.*
-    lpush white_spider#googlebot 66.249.68.*
-    lpush white_spider#googlebot 66.249.69.*
-    lpush white_spider#googlebot 66.249.70.*
-    lpush white_spider#googlebot 66.249.71.*
-    lpush white_spider#googlebot 66.249.72.*
-    lpush white_spider#googlebot 66.249.73.*
-    lpush white_spider#google-proxy 66.102.6.*
-    lpush white_spider#google-proxy 66.102.7.*
-    lpush white_spider#google-proxy 66.102.8.*
-    lpush white_spider#google-proxy 66.102.9.*
-    lpush white_spider#sogouspider 123.126.113.*
-    lpush white_spider#sogouspider 218.30.103.*
-    lpush white_spider#sogouspider 61.135.189.*
-    lpush white_spider#shenmaspider 42.156.136.*
-    lpush white_spider#shenmaspider 42.156.137.*
-    lpush white_spider#shenmaspider 42.156.138.*
-    lpush white_spider#shenmaspider 42.156.139.*
-    lpush white_spider#shenmaspider 42.120.160.*
-    lpush white_spider#shenmaspider 42.120.161.*
-    lpush white_spider#msnbot 157.55.39.*
-    lpush white_spider#msnbot 40.77.167.*
-    lpush white_spider#msnbot 207.46.13.*
-    lpush white_spider#msnbot 65.52.110.*
-    lpush white_spider#bytespider 111.225.149.*
-    lpush white_spider#bytespider 110.249.202.*
-    lpush white_spider#youdaobot 61.135.249.220
-    lpush white_spider#petalbot 114.119.160.*
-    lpush white_spider#petalbot 114.119.161.*
-    lpush white_spider#petalbot 114.119.162.*
-    lpush white_spider#petalbot 114.119.163.*
-    lpush white_spider#petalbot 114.119.164.*
-    lpush white_spider#petalbot 114.119.165.*
-    lpush white_spider#petalbot 114.119.166.*
-    lpush white_spider#petalbot 114.119.167.*
+    lpush white_spider#Baiduspider 123.125.66.*
+    lpush white_spider#Baiduspider 220.181.108.*
+    lpush white_spider#Baiduspider 123.125.71.*
+    lpush white_spider#Baiduspider 180.76.5.*
+    lpush white_spider#Baiduspider 220.181.32.*
+    lpush white_spider#Baiduspider 61.135.168.*
+    lpush white_spider#Baiduspider 61.135.186.*
+    lpush white_spider#Baiduspider 111.206.198.*
+    lpush white_spider#Baiduspider 111.206.221.*
+    lpush white_spider#Baiduspider 116.179.32.*
+
+    lpush white_spider#Googlebot 203.208.60.*
+    lpush white_spider#Googlebot 66.249.64.*
+    lpush white_spider#Googlebot 66.249.65.*
+    lpush white_spider#Googlebot 66.249.66.*
+    lpush white_spider#Googlebot 66.249.68.*
+    lpush white_spider#Googlebot 66.249.69.*
+    lpush white_spider#Googlebot 66.249.70.*
+    lpush white_spider#Googlebot 66.249.71.*
+    lpush white_spider#Googlebot 66.249.72.*
+    lpush white_spider#Googlebot 66.249.73.*
+    lpush white_spider#Googlebot 66.249.75.*
+    lpush white_spider#Googlebot 66.249.79.*
+    
+    lpush white_spider#Google-proxy 66.102.6.*
+    lpush white_spider#Google-proxy 66.102.7.*
+    lpush white_spider#Google-proxy 66.102.8.*
+    lpush white_spider#Google-proxy 66.102.9.*
+    
+    lpush white_spider#Sogou 123.126.113.*
+    lpush white_spider#Sogou 218.30.103.*
+    lpush white_spider#Sogou 61.135.189.*
+    lpush white_spider#Sogou 123.183.224.*
+    
+    lpush white_spider#YisouSpider 42.156.136.*
+    lpush white_spider#YisouSpider 42.156.137.*
+    lpush white_spider#YisouSpider 42.156.138.*
+    lpush white_spider#YisouSpider 42.156.139.*
+    lpush white_spider#YisouSpider 42.120.160.*
+    lpush white_spider#YisouSpider 42.120.161.*
+    lpush white_spider#YisouSpider 106.11.152.*
+    lpush white_spider#YisouSpider 106.11.153.*
+    lpush white_spider#YisouSpider 106.11.154.*
+    lpush white_spider#YisouSpider 106.11.155.*
+    lpush white_spider#YisouSpider 106.11.156.*
+    lpush white_spider#YisouSpider 106.11.157.*
+    lpush white_spider#YisouSpider 106.11.158.*
+    lpush white_spider#YisouSpider 106.11.159.*
+    lpush white_spider#YisouSpider 42.156.254.*
+    lpush white_spider#YisouSpider 42.156.255.*
+    
+    lpush white_spider#bingbot 157.55.39.*
+    lpush white_spider#bingbot 40.77.167.*
+    lpush white_spider#bingbot 207.46.13.*
+    lpush white_spider#bingbot 65.52.110.*
+    
+    lpush white_spider#Bytespider 111.225.149.*
+    lpush white_spider#Bytespider 110.249.202.*
+    lpush white_spider#Bytespider 110.249.201.*
+    lpush white_spider#Bytespider 111.225.148.*
+    lpush white_spider#Bytespider 220.243.135.*
+    lpush white_spider#Bytespider 220.243.136.*
+    lpush white_spider#Bytespider 60.8.123.*
+
+    lpush white_spider#YoudaoBot 61.135.249.220
+
+    lpush white_spider#PetalBot 114.119.160.*
+    lpush white_spider#PetalBot 114.119.161.*
+    lpush white_spider#PetalBot 114.119.162.*
+    lpush white_spider#PetalBot 114.119.163.*
+    lpush white_spider#PetalBot 114.119.164.*
+    lpush white_spider#PetalBot 114.119.165.*
+    lpush white_spider#PetalBot 114.119.166.*
+    lpush white_spider#PetalBot 114.119.167.*
+    
     lpush white_spider#360Spider 180.153.232.*
     lpush white_spider#360Spider 180.153.234.*
     lpush white_spider#360Spider 180.153.236.*
