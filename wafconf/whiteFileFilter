@@ -1,0 +1,3 @@
+\.(zip|rar|gz|tar|gzip|7z|tgz|tbz|bz2)$
+\.(mp3|wma|mmf|amr|aac|flac)$
+\.(MPEG|MPG|DAT|AVI|MOV|ASF|WMV|MKV|FLV|F4V|RMVB|WebM|qsv|MP4|TS)$

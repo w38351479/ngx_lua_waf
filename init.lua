@@ -99,6 +99,45 @@ function RedisZGET(type_day_key)
 end
 
 
+--redis list集合，用于存储真蜘蛛记录
+function RedisLSET(spider_name,spider_key)
+    if RedisLogAttacks then
+        local set_key = "white_spider#" .. spider_name
+        local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+        local req, _ = redis_conn:get(set_key)
+        local reg_ip = string.gsub(spider_key,"%.%d+$","%.*")
+        if req ~= ngx.null then
+            redis_conn:lpush(set_key,reg_ip)
+        else
+            redis_conn:lpush(set_key,reg_ip)
+            --保存6个月
+            --redis_conn:expire(set_key, 15552000)
+        end
+        redis_conn:close()
+    end
+end
+
+--变量是否在list中
+function RedisLGET(spider_name,spider_ip)
+    local set_key = "white_spider#" .. spider_name
+    local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
+    local req,err = redis_conn:llen(set_key)
+    if req ~= ngx.null and not err then
+        for i=req,0,-1 do
+            local lreq,lerr = redis_conn:lindex(set_key,i)
+            if lreq ~= ngx.null then
+                local lreq_reg,_ = string.gsub(lreq,"%.","\\%.")
+                if ngxmatch(spider_ip,lreq_reg,'ijo') then
+                    return 1
+                end
+            end
+        end
+        return 0
+    else
+        return 0
+    end
+    redis_conn:close()
+end
 
 
 
@@ -227,6 +266,7 @@ ckrules=read_rule('cookie')
 whitereferer=read_rule('WhiteReferer')
 blockreferer=read_rule('BlockReferer')
 abnormal_proxy_rules=read_rule('block_proxy')
+WhiteFileFilter_rules=read_rule('whiteFileFilter')
 
 function say_html(v)
     if not v then
@@ -546,6 +586,7 @@ function whiteua()
                 if config_bots_check  then
                     local token ="FakeSpider#" .. now_ip
                     if RedisLogAttacks then
+                        --先检查是不是假蜘蛛
                         local redis_conn = RedisConnect(redis_host, redis_port, redis_passwd)
                         local req, _ = redis_conn:get(token)                   
                         if req ~= ngx.null then
@@ -553,14 +594,47 @@ function whiteua()
                             RedisLog("forge_ua")
                             say_html("疑似伪造爬虫，未过禁止访问期")
                             ngx.exit(403)
-                            return true 
+                            return true
                         else
+                            --检查蜘蛛名称,用于后面get/set
+                            local rule_tmp = split(rule,'|')
+                            local spider_name = nil
+                            for i=#rule_tmp,1,-1 do
+                                local rrl,_ = string.gsub(rule_tmp[i],'%(','')
+                                rrl,_ = string.gsub(rrl,'%)','')
+                                if ngxmatch(ua,rrl,"ijo") then
+                                    spider_name = rrl
+                                end
+                            end
+                            --再检查是不是真蜘蛛.看缓存里有没有，这样不用每次请求网络
+                            if RedisLGET(spider_name,now_ip) == 1 then
+                                return false
+                            end
+                            --请求网络验证蜘蛛
                             local handle = io.popen("host " ..now_ip)
                             local result = handle:read("*all")
                             handle:close()
-                            if not ngxmatch(result,rule,"ijo") then
+                            --记录真蜘蛛
+                            local spider_ptr = nil
+                            --特殊蜘蛛ptr与名称不一致
+                            if ngxmatch('bingbot',spider_name,"ijo") then
+                                spider_ptr = 'msnbot'
+                            elseif ngxmatch('Sogou',spider_name,"ijo") then
+                                spider_ptr = 'sogouspider'
+                            elseif ngxmatch('YisouSpider',spider_name,"ijo") then
+                                spider_ptr = 'shenmaspider'
+                            else
+                                spider_ptr = spider_name
+                            end
+                            --360Spider的永远不会更新
+                            if ngxmatch(result,spider_ptr,"ijo") then
+                                RedisLSET(spider_name,now_ip)
+                                return false
+                            else
+                            --if not ngxmatch(result,rule,"ijo") then
                                 redis_conn:set(token, 1)
                                 redis_conn:expire(token, BlockBotsTime)
+                                redis_conn:close()
                                 log("-", "Suspected forged reptile: "..rule)
                                 RedisLog("forge_ua")
                                 say_html("疑似伪造爬虫，禁止访问")
@@ -595,7 +669,8 @@ function whiteua()
                         end
                     end
                 end
-                return true
+                --继续后面检查规则
+                return false
             end
         end
     end

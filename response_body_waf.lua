@@ -4,6 +4,7 @@ require 'config'
 require 'idcard_check'
 local optionIsOn = function (options) return options == "on" and true or false end
 logpath = logdir
+local unescape=ngx.unescape_uri
 local FilterID = optionIsOn(FilterID)
 local FilterPhoneNumbers = optionIsOn(FilterPhoneNumbers)
 local Desensitization_log = optionIsOn(Desensitization_log)
@@ -24,15 +25,24 @@ if chunk ~= "" and not ngx.is_subrequest then
     ngx.arg[1] = nil
 end
 
+local WhiteFileFilter_tmp = true
 -- 如果为最后一次响应，对所有响应数据进行处理
 if eof then
     -- 获取所有响应数据
     local whole = table.concat(ngx.ctx.buffered)
     ngx.ctx.buffered = nil
 
+    for _,rule in pairs(WhiteFileFilter_rules) do
+        if rule =="" or ngx.re.match(unescape(ngx.var.request_uri),rule,"isjo")  then
+            WhiteFileFilter_tmp = false
+            --DesensitizationLog("skip url: ".. rule)
+            break
+        end
+    end
+
     -- 进行你所需要进行的处理
     -- 身份证号码脱敏
-    if FilterID then
+    if FilterID and WhiteFileFilter_tmp then
         --lua 默认不支持POSIX规范，所以这里身份证替换不是特别精准
         --身份证号码为15位或者18位，15位不在考虑范围内，18位前17位为数字，最后一位是校验位，可能为数字或字符X
         -- [1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx] 
@@ -48,8 +58,9 @@ if eof then
     end
     -- 手机号码脱敏
     if whole ~= nil then
-        if FilterPhoneNumbers then
-            whole, y_n, y_err = ngx.re.gsub(whole,"([^\\d](13[0-9])|(14[579])|(15([0-3]|[5-9]))|(16[6])|(17[0135678])|(18[0-9])|(19[89]))(\\d{4})(\\d{4}[^\\d])","$1".."****".."$11")
+        if FilterPhoneNumbers and WhiteFileFilter_tmp then
+            --whole, y_n, y_err = ngx.re.gsub(whole,"([^\\d](13[0-9])|(14[579])|(15([0-3]|[5-9]))|(16[6])|(17[0135678])|(18[0-9])|(19[89]))(\\d{4})(\\d{4}[^\\d])","$1".."****".."$11")
+            whole, y_n, y_err = ngx.re.gsub(whole,"(((([^\\d]|^)(13[0-9]))|(([^\\d]|^)(14[579]))|(([^\\d]|^)(15([0-3]|[5-9])))|(([^\\d]|^)(16[6]))|(([^\\d]|^)(17[0135678]))|(([^\\d]|^)(18[0-9]))|(([^\\d]|^)(19[89])))(\\d{4})((\\d{4})(?!\\d+)))","$2".."****".."$26")
             if Desensitization_log then
                 for p_string in  string.gmatch(whole,'1%d%d%*%*%*%*%d%d%d%d') do
                     DesensitizationLog("Desensitization phone number: ".. p_string)
