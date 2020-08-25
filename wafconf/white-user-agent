@@ -1,10 +1,15 @@
 --参考:      蜘蛛名称       解析后名称
 --百度搜索   Baiduspider    baiduspider
 --谷歌搜索   Googlebot      googlebot
---360搜索    360Spider      kd.ny.adsl
+--谷歌代理   Google-proxy   google-proxy
+--360搜索    360Spider      不支持PTR,如果要使用，请把360Spider添加至规则中，然后手动写入redis白名单 http://www.so.com/help/spider_ip.html
 --必应搜索   bingbot        msnbot
 --搜狗搜搜   Sosospider     sosospider
 --字节跳动   Bytespider     bytespider
 --搜狗蜘蛛   Sogou          sogouspider
 --神马搜索   YisouSpider    shenmaspider
-(baiduspider|googlebot|kd\.ny\.adsl|msnbot|sosospider|bytespider|sogouspider|shenmaspider)
+--有道蜘蛛   YoudaoBot      youdaobot
+--花瓣蜘蛛(华为)PetalBot    petalbot
+--
+--对应关系已经在代码中写死，正则只需要填蜘蛛名称就可以了
+(Baiduspider|Googlebot|Google-proxy|bingbot|Sosospider|Bytespider|Sogou|YisouSpider|YoudaoBot)

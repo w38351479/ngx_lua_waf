@@ -99,7 +99,7 @@ if (option && typeof option === "object") {
 <table border="1" style="border-collapse: collapse;" align="center">
 <tbody>
 
-<tr><th>CC攻击</th><th>SQL注入</th><th>目录扫描</th><th>慢速攻击</th><th>非法User-Agent</th><th>敏感文件访问</th></tr>
+<tr><th>CC攻击</th><th>SQL注入</th><th>目录扫描</th><th>慢速攻击</th><th>非法User-Agent(不含空UA)</th><th>敏感文件访问</th></tr>
 %s
 </tbody></table>
 <br />
@@ -262,7 +262,7 @@ function LogCount(nowday)
 
 
 
-    local data = '{seriesData:[{name: "nginx的server_name白名单(%s)", value: %s},{name: "args攻击(%s)", value: %s},{name: "args SQL攻击(%s)", value: %s},{name: "敏感文件访问(%s)", value: %s},{name: "非法User-Agent(%s)", value: %s},{name: "cookie攻击(%s)", value: %s},{name: "cookie SQL攻击(%s)", value: %s},{name: "URL访问太频繁(%s)", value: %s},{name: "IP访问太频繁(%s)", value: %s},{name: "伪造爬虫(%s)", value: %s},{name: "合法文件后缀上传(%s)", value: %s},{name: "非法文件后缀上传(%s)", value: %s},{name: "禁止特定Referer访问(%s)", value: %s},{name: "请求方法不允许(%s)", value: %s},{name: "连续响应异常状态码(%s)", value: %s},{name: "疑似慢速攻击(%s)", value: %s},{name: "使用非法代理访问(%s)", value: %s},{name: "Body Post攻击(%s)", value: %s},{name: "Body Post SQL攻击(%s)", value: %s}]}'
+    local data = '{seriesData:[{name: "nginx的server_name白名单(%s)", value: %s},{name: "args攻击(%s)", value: %s},{name: "args SQL攻击(%s)", value: %s},{name: "敏感文件访问(%s)", value: %s},{name: "非法User-Agent(含空UA)(%s)", value: %s},{name: "cookie攻击(%s)", value: %s},{name: "cookie SQL攻击(%s)", value: %s},{name: "URL访问太频繁(%s)", value: %s},{name: "IP访问太频繁(%s)", value: %s},{name: "伪造爬虫(%s)", value: %s},{name: "合法文件后缀上传(%s)", value: %s},{name: "非法文件后缀上传(%s)", value: %s},{name: "禁止特定Referer访问(%s)", value: %s},{name: "请求方法不允许(%s)", value: %s},{name: "连续响应异常状态码(%s)", value: %s},{name: "疑似慢速攻击(%s)", value: %s},{name: "使用非法代理访问(%s)", value: %s},{name: "Body Post攻击(%s)", value: %s},{name: "Body Post SQL攻击(%s)", value: %s}]}'
 
     local format_data = string.format(data,tostring(while_host_v),tostring(while_host_v),
                           tostring(args_attack),tostring(args_attack), 
